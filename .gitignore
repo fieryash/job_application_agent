@@ -1,0 +1,47 @@
+# --- Secrets / local env ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# --- Virtual environments ---
+.venv/
+venv/
+ENV/
+env/
+
+# --- Build / packaging ---
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# --- Logs / temp ---
+*.log
+*.tmp
+*.swp
+
+# --- Project data (local-only) ---
+data/jobs.db
+data/*.db*
+data/*.sqlite*
+data/*.sqlite3*
+data/profiles/
+data/profile.json
+resume/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

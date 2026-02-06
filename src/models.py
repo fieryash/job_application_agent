@@ -112,6 +112,8 @@ class JobRequirements(BaseModel):
 class JobSource(BaseModel):
     url: Optional[str] = None
     ats: Optional[str] = None
+    source_type: Optional[str] = None  # direct | aggregator
+    resolved_from: Optional[str] = None
 
 
 class Job(BaseModel):
@@ -121,6 +123,7 @@ class Job(BaseModel):
     location: Optional[str] = None
     remote_policy: Optional[str] = None
     level: Optional[str] = None
+    posted_at: Optional[str] = None
     source: Optional[JobSource] = None
     requirements: JobRequirements = Field(default_factory=JobRequirements)
     stack: List[str] = Field(default_factory=list)
@@ -148,6 +151,28 @@ class ExactMatchResult(BaseModel):
     missing: List[str] = Field(default_factory=list)
 
 
+class ScoreComponent(BaseModel):
+    key: str
+    label: str
+    weight: float
+    score: float
+    contribution: float
+    reason: Optional[str] = None
+
+
+class KeywordCoverage(BaseModel):
+    must_have_total: int = 0
+    must_have_matched: List[str] = Field(default_factory=list)
+    must_have_missing: List[str] = Field(default_factory=list)
+    nice_to_have_total: int = 0
+    nice_to_have_matched: List[str] = Field(default_factory=list)
+    nice_to_have_missing: List[str] = Field(default_factory=list)
+    stack_total: int = 0
+    stack_matched: List[str] = Field(default_factory=list)
+    stack_missing: List[str] = Field(default_factory=list)
+    overall_coverage: float = 0.0
+
+
 class HardFilterResult(BaseModel):
     passed: bool
     reasons: List[str] = Field(default_factory=list)
@@ -163,12 +188,22 @@ class FitResult(BaseModel):
     gaps: List[str] = Field(default_factory=list)
     subscores: FitSubscores = Field(default_factory=FitSubscores)
     exact_match: ExactMatchResult = Field(default_factory=ExactMatchResult)
+    score_components: List[ScoreComponent] = Field(default_factory=list)
+    keyword_coverage: KeywordCoverage = Field(default_factory=KeywordCoverage)
 
 
 class TailoredBullet(BaseModel):
     source_id: str
+    source_text: Optional[str] = None
     rewritten_text: str
     diff_from_source: Optional[str] = None
+    preview_html: Optional[str] = None
+
+
+class TailoredEditorDraft(BaseModel):
+    summary: str = ""
+    skills: List[str] = Field(default_factory=list)
+    bullets: List[str] = Field(default_factory=list)
 
 
 class TailoredResume(BaseModel):
@@ -177,5 +212,18 @@ class TailoredResume(BaseModel):
     rewritten_bullets: List[TailoredBullet] = Field(default_factory=list)
     ats_keyword_report: Dict[str, object] = Field(default_factory=dict)
     validation: Dict[str, object] = Field(default_factory=dict)
+    preview_html: Optional[str] = None
+    editor_draft: Optional[TailoredEditorDraft] = None
     exports: Dict[str, object] = Field(default_factory=dict)
     human_approval: Dict[str, object] = Field(default_factory=dict)
+
+
+class AutoApplyResult(BaseModel):
+    job_id: str
+    profile_tag: str
+    status: str  # submitted | ready_to_submit | unsupported | failed
+    submitted: bool = False
+    apply_url: Optional[str] = None
+    ats: Optional[str] = None
+    message: str
+    steps: List[str] = Field(default_factory=list)

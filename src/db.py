@@ -142,12 +142,19 @@ def upsert_jobs(jobs: Iterable[Job]) -> None:
         upsert_job(job)
 
 
-def list_jobs(limit: int = 50, exclude_status: Optional[List[str]] = None, profile_tag: Optional[str] = None) -> List[Job]:
+def list_jobs(
+    limit: int = 50,
+    offset: int = 0,
+    exclude_status: Optional[List[str]] = None,
+    profile_tag: Optional[str] = None,
+) -> List[Job]:
     """
     List jobs with optional status filtering.
     exclude_status: List of statuses to exclude (e.g., ['applied', 'hidden'])
     """
     init_db()
+    lim = max(1, int(limit))
+    off = max(0, int(offset))
     with _conn() as conn:
         if exclude_status and profile_tag:
             placeholders = ",".join("?" * len(exclude_status))
@@ -156,13 +163,13 @@ def list_jobs(limit: int = 50, exclude_status: Optional[List[str]] = None, profi
                 SELECT j.raw_json FROM jobs j
                 LEFT JOIN job_user_status jus ON j.id = jus.job_id AND jus.profile_tag = ?
                 WHERE jus.status IS NULL OR jus.status NOT IN ({placeholders})
-                ORDER BY j.ingested_at DESC LIMIT ?
+                ORDER BY j.ingested_at DESC LIMIT ? OFFSET ?
                 """,
-                (profile_tag, *exclude_status, limit)
+                (profile_tag, *exclude_status, lim, off)
             ).fetchall()
         else:
             rows = conn.execute(
-                "SELECT raw_json FROM jobs ORDER BY ingested_at DESC LIMIT ?", (limit,)
+                "SELECT raw_json FROM jobs ORDER BY ingested_at DESC LIMIT ? OFFSET ?", (lim, off)
             ).fetchall()
     
     results: List[Job] = []
@@ -261,18 +268,20 @@ def get_job_status(job_id: str, profile_tag: str) -> Optional[str]:
     return row["status"] if row else None
 
 
-def list_jobs_by_status(profile_tag: str, status: str, limit: int = 50) -> List[Job]:
+def list_jobs_by_status(profile_tag: str, status: str, limit: int = 50, offset: int = 0) -> List[Job]:
     """List jobs with a specific status for a user."""
     init_db()
+    lim = max(1, int(limit))
+    off = max(0, int(offset))
     with _conn() as conn:
         rows = conn.execute(
             """
             SELECT j.raw_json FROM jobs j
             JOIN job_user_status jus ON j.id = jus.job_id
             WHERE jus.profile_tag = ? AND jus.status = ?
-            ORDER BY jus.updated_at DESC LIMIT ?
+            ORDER BY jus.updated_at DESC LIMIT ? OFFSET ?
             """,
-            (profile_tag, status, limit)
+            (profile_tag, status, lim, off)
         ).fetchall()
     
     results: List[Job] = []
